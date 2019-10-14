@@ -48,11 +48,8 @@ public class PRCprojectGUI extends JFrame
    private JRadioButton phase4Q1_1;
    private JRadioButton phase4Q2_1;
    private JRadioButton phase4Q3_1;
-
-   private JLabel search1_label;
-                   
+   private JLabel search1_label;        
    private JLabel search2_label;
-   
    private JLabel answer_label;
 
    /**
@@ -232,8 +229,8 @@ public class PRCprojectGUI extends JFrame
                   tabbedPane.addTab("Special Scenarios", null, panel_3, null);
                   
                  phase4Q1_1 = new JRadioButton("Give 2 actors, List the shortest list of movie titles that connects the 2. ");
-                  phase4Q2_1 = new JRadioButton("Given 2 years, be able to list the shortest list of (Directors, or Actors) that had movies released.");
-                  phase4Q3_1 = new JRadioButton("Given a actor, list the first movie they were in.");
+                  phase4Q2_1 = new JRadioButton("List an actor who performed in a movie every year in the given range of years.");
+                  phase4Q3_1 = new JRadioButton("Given a actor, list the first big movie they were in.");
                   main_panel = new JPanel();
                   main_panel.setVisible(false);
                   
@@ -586,9 +583,11 @@ public class PRCprojectGUI extends JFrame
             //create a statement object
             Statement stmt = conn.createStatement();
             
-            // QUESTION 3
+            // QUESTION 3 - Given a actor, list the first big movie they were in.
             if(phase4Q3_1.isSelected()){
                q3 = true;
+
+               //query1 - get known for titles
                String query1 = "select knownfortitles from name_basics where primaryname = '" + search1.getText() + "'";
 
                System.out.println("query1: " + query1);
@@ -596,14 +595,12 @@ public class PRCprojectGUI extends JFrame
                ResultSet query1ResultSet = stmt.executeQuery(query1);
                String tconstList = "";
                while(query1ResultSet.next()){
-                  // System.out.println("HERE");
                   System.out.println("this: " + query1ResultSet.getString("knownForTitles"));
                   tconstList = query1ResultSet.getString("knownForTitles");
                }
                String tconstListArr[] = tconstList.split(",");
 
-               System.out.println("tconstListArr: " + tconstListArr[0]);
-
+               //query 2 - first knownfor title by actor
                sqlStatement = "select primarytitle from title_basics where (tconst = '";
 
                for(int i = 0; i<tconstListArr.length; i++){
@@ -616,17 +613,18 @@ public class PRCprojectGUI extends JFrame
                sqlStatement += "') order by startyear ASC limit 1";
 
                ResultSet result = stmt.executeQuery(sqlStatement);
-
+               //set resultTable
                while (result.next()) {
                      resultTable += result.getString("primaryTitle");
                }
 
             }
             
-            //QUESTION 1
+            //QUESTION 1 - not implemented
             else if(phase4Q1_1.isSelected()){
                q1 = true;
             }
+
             //QUESTION 2
             else if(phase4Q2_1.isSelected()){
                q2 = true;
@@ -634,49 +632,47 @@ public class PRCprojectGUI extends JFrame
                String year2 = search2.getText();
                int numYears = Integer.parseInt(year2) - Integer.parseInt(year1) + 1;
                System.out.println(numYears);
+
+               //query1 - get all actor/actress/director id's in year range
                String query = "select distinct nconst, startyear from actor_years where startyear >= " + year1 + " AND startyear <= " + year2;
 
                System.out.println("query1: " + query);
 
                ResultSet queryResultSet = stmt.executeQuery(query);
                Vector allActors = new Vector();
-               System.out.println("Executed query");
+
                while(queryResultSet.next()){
                   allActors.add(queryResultSet.getString("nconst"));
                }
                
+               //find actor/actress/director who has one movie in every year in range
                Set<String> distinct = new HashSet<>(allActors);
                String nconstAns = "";
                for(String s : distinct){
                   if(Collections.frequency(allActors, s) == numYears){
                      nconstAns = s;
                      System.out.println(Collections.frequency(allActors, s));
-                     System.out.println("restab: " + nconstAns);
+                     System.out.println("nconstAns: " + nconstAns);
                      break;
                   }   
                }
 
+               //get name of actor/actress/director
                String query2 = "select primaryname from name_basics where nconst = '" + nconstAns + "'";
 
                ResultSet result = stmt.executeQuery(query2);
-
+               //set resultTable
                while (result.next()) {
                      resultTable += result.getString("primaryName");
                }
 
             }
+
             else{
                sqlStatement = "";
             }
             
-            // //send statement to DBMS
-            // ResultSet result = stmt.executeQuery(sqlStatement);
-
-            // while (result.next()) {
-            //    if(q3){
-            //       resultTable += result.getString("primaryTitle");
-            //    }
-            // }
+           
          } catch (Exception ex){
          JOptionPane.showMessageDialog(null,"Error accessing Database.");
          }
