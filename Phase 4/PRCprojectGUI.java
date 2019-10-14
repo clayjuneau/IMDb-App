@@ -7,6 +7,7 @@ import javax.swing.GroupLayout.Alignment;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import java.io.File;  
 import java.io.FileWriter;  
+import java.util.*;
 /**
    The KiloConverterWindow class displays a JFrame that
    lets the user enter a distance in kilometers. When
@@ -47,6 +48,12 @@ public class PRCprojectGUI extends JFrame
    private JRadioButton phase4Q1_1;
    private JRadioButton phase4Q2_1;
    private JRadioButton phase4Q3_1;
+
+   private JLabel search1_label;
+                   
+   private JLabel search2_label;
+   
+   private JLabel answer_label;
 
    /**
       Constructor
@@ -274,11 +281,11 @@ public class PRCprojectGUI extends JFrame
                    answer_special = new JTextField();
                    answer_special.setColumns(10);
                    
-                   JLabel search1_label = new JLabel("Actor 1:");
+                     search1_label = new JLabel("Actor 1:");
                    
-                   JLabel search2_label = new JLabel("Actor 2:");
+                   search2_label = new JLabel("Actor 2:");
                    
-                   JLabel answer_label = new JLabel("Result:");
+                   answer_label = new JLabel("Result:");
                    
                    
                    
@@ -608,34 +615,68 @@ public class PRCprojectGUI extends JFrame
 
                sqlStatement += "') order by startyear ASC limit 1";
 
+               ResultSet result = stmt.executeQuery(sqlStatement);
+
+               while (result.next()) {
+                     resultTable += result.getString("primaryTitle");
+               }
+
             }
             
-            // //QUESTION 1
-            // else if(phase4Q1_1.isSelected()){
+            //QUESTION 1
+            else if(phase4Q1_1.isSelected()){
+               q1 = true;
+            }
+            //QUESTION 2
+            else if(phase4Q2_1.isSelected()){
+               q2 = true;
+               String year1 = search1.getText();
+               String year2 = search2.getText();
+               int numYears = Integer.parseInt(year2) - Integer.parseInt(year1) + 1;
+               System.out.println(numYears);
+               String query = "select distinct nconst, startyear from actor_years where startyear >= " + year1 + " AND startyear <= " + year2;
 
-            // }
-            // //QUESTION 2
-            // else if(phase4Q2_1.isSelected()){
+               System.out.println("query1: " + query);
 
-            // }
+               ResultSet queryResultSet = stmt.executeQuery(query);
+               Vector allActors = new Vector();
+               System.out.println("Executed query");
+               while(queryResultSet.next()){
+                  allActors.add(queryResultSet.getString("nconst"));
+               }
+               
+               Set<String> distinct = new HashSet<>(allActors);
+               String nconstAns = "";
+               for(String s : distinct){
+                  if(Collections.frequency(allActors, s) == numYears){
+                     nconstAns = s;
+                     System.out.println(Collections.frequency(allActors, s));
+                     System.out.println("restab: " + nconstAns);
+                     break;
+                  }   
+               }
+
+               String query2 = "select primaryname from name_basics where nconst = '" + nconstAns + "'";
+
+               ResultSet result = stmt.executeQuery(query2);
+
+               while (result.next()) {
+                     resultTable += result.getString("primaryName");
+               }
+
+            }
             else{
                sqlStatement = "";
             }
-            System.out.println("RIGHT HERE");
-
             
+            // //send statement to DBMS
+            // ResultSet result = stmt.executeQuery(sqlStatement);
 
-            
-            System.out.println(sqlStatement);
-         
-            //send statement to DBMS
-            ResultSet result = stmt.executeQuery(sqlStatement);
-
-            while (result.next()) {
-               if(q3){
-                  resultTable += result.getString("primaryTitle");
-               }
-            }
+            // while (result.next()) {
+            //    if(q3){
+            //       resultTable += result.getString("primaryTitle");
+            //    }
+            // }
          } catch (Exception ex){
          JOptionPane.showMessageDialog(null,"Error accessing Database.");
          }
